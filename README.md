@@ -1,16 +1,16 @@
-# PayLocal — Demo
+# PayLocal
 
-A Spring Boot backend that demonstrates **offline UPI payments routed through a Bluetooth-style mesh network**. You're in a basement with zero connectivity. You send your friend ₹500. Your phone encrypts the payment, broadcasts it to nearby phones, and the packet hops device-to-device until *some* phone walks outside, gets 4G, and silently uploads it to this backend. The backend decrypts, deduplicates, and settles.
+A Spring Boot backend implementing **offline UPI payments routed through a Bluetooth-style mesh network**. You're in a basement with zero connectivity. You send your friend ₹500. Your phone encrypts the payment, broadcasts it to nearby phones, and the packet hops device-to-device until *some* phone walks outside, gets 4G, and silently uploads it to this backend. The backend decrypts, deduplicates, and settles.
 
-This repo is the **server side** of that system, plus a software simulator of the mesh so you can demo the whole flow on a single laptop without any real Bluetooth hardware.
+This repo is the **server side** of that system, plus a software simulator of the mesh so you can exercise the whole flow on a single laptop without any real Bluetooth hardware.
 
 ---
 
 ## Table of Contents
 
-1. [What this demo proves](#what-this-demo-proves)
+1. [What this implementation proves](#what-this-implementation-proves)
 2. [How to run it](#how-to-run-it)
-3. [The demo flow (step by step)](#the-demo-flow-step-by-step)
+3. [The flow (step by step)](#the-flow-step-by-step)
 4. [Architecture](#architecture)
 5. [The three hard problems and how they're solved](#the-three-hard-problems-and-how-theyre-solved)
 6. [File-by-file walkthrough](#file-by-file-walkthrough)
@@ -21,7 +21,7 @@ This repo is the **server side** of that system, plus a software simulator of th
 
 ---
 
-## What this demo proves
+## What this implementation proves
 
 The system shows three things working end to end:
 
@@ -62,7 +62,7 @@ Once you see `Started PayLocalApplication in X.XXX seconds`, open:
 
 **http://localhost:8080**
 
-You'll get a dark dashboard with everything you need to drive the demo.
+You'll get a dark dashboard with everything you need to drive the app.
 
 ### Stop the server
 
@@ -78,7 +78,7 @@ The interesting one is `IdempotencyConcurrencyTest` — it fires three threads d
 
 ---
 
-## The demo flow (step by step)
+## The flow (step by step)
 
 The dashboard has four buttons that walk through the full pipeline. The intended sequence:
 
@@ -120,7 +120,7 @@ The backend pipeline runs:
 
 Watch the **Account Balances** table — money has moved. Watch the **Transaction Ledger** — a new row appears.
 
-### Step 4 — Demonstrate idempotency (the killer feature)
+### Step 4 — Exercise idempotency (the killer feature)
 
 Reset the mesh. Inject a single packet. Run gossip 2 times. Now **all 5 devices hold the same packet, including multiple bridges in a more complex setup**.
 
@@ -353,9 +353,9 @@ The three included tests:
 
 ## What's NOT real (and what would change for production)
 
-This is a teaching demo. To make it production-grade you'd swap these things:
+This is a prototype implementation. To make it production-grade you'd swap these things:
 
-| What's in the demo | What it would be in production |
+| What's in this implementation | What it would be in production |
 |---|---|
 | H2 in-memory DB | PostgreSQL / MySQL with replicas |
 | `ConcurrentHashMap` for idempotency | Redis with `SET NX EX` |
@@ -379,10 +379,8 @@ I want this README to be useful to you when someone reviews the project, so let'
 
 1. **The receiver has no way to verify the sender has the funds.** When sender hands receiver a phone showing "₹500 sent," it's an IOU, not a settled payment. If the sender's account is empty when the packet finally reaches the backend, the settlement will be `REJECTED` and the receiver is out ₹500 with no recourse. *This is why real offline UPI (UPI Lite) uses a pre-funded hardware-backed wallet* — to give cryptographic proof of available funds offline.
 2. **A malicious sender can double-spend offline.** With ₹500 in their account, they could send a packet to Bob in basement A, walk to basement B, and send another ₹500 to Carol. Whichever packet hits the backend first wins; the other gets `REJECTED`. Same root cause as #1.
-3. **Bluetooth in real life is hard.** Background BLE on Android is heavily throttled since Android 8. iOS peripheral mode is locked down. Two strangers' phones reliably forming a GATT connection while the apps aren't actively open is genuinely difficult and a lot of energy. This demo skips that problem entirely by simulating the mesh.
+3. **Bluetooth in real life is hard.** Background BLE on Android is heavily throttled since Android 8. iOS peripheral mode is locked down. Two strangers' phones reliably forming a GATT connection while the apps aren't actively open is genuinely difficult and a lot of energy. This project skips that problem entirely by simulating the mesh.
 4. **Privacy / liability.** A stranger carries your encrypted transaction packet on their phone. They can't read it, but its existence is metadata. In a real deployment you'd want to think about regulatory disclosures and what happens if a device is seized.
-
-For a college / portfolio project: name the concept honestly as **"mesh-routed deferred settlement"** rather than "real-time offline UPI," and you'll have a much stronger pitch. The cryptography and idempotency work here is real engineering and worth showing off.
 
 ---
 
@@ -402,4 +400,4 @@ For a college / portfolio project: name the concept honestly as **"mesh-routed d
 
 ## License
 
-Demo code, no license. Use it however you want for learning.
+Prototype code, no license. Use it however you want.
